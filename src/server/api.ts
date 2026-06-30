@@ -16,10 +16,33 @@ const ai = new GoogleGenAI({
   }
 });
 
+// Global Error Handler for Express
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Global Error Handler:", err);
+  res.status(500).json({ 
+    error: "Express Global Error", 
+    message: err.message || "Unknown error",
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
 // API Routes
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    hasApiKey: !!process.env.GEMINI_API_KEY,
+    env: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { history, documentContext, role, personality, difficulty, lastUserResponse } = req.body;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "Missing GEMINI_API_KEY environment variable. Please configure it in your Vercel project settings." });
+    }
 
     const systemInstruction = `
       Bạn đang đóng vai một ${role} (${role === 'phụ huynh' ? 'phụ huynh' : 'học sinh'}) đang đi tìm hiểu thông tin tuyển sinh.
@@ -50,8 +73,9 @@ app.post("/api/chat", async (req, res) => {
       }];
     }
 
+    // Attempting with gemini-2.0-flash or gemini-1.5-flash
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.0-flash",
       contents,
       config: {
         systemInstruction,
@@ -62,12 +86,20 @@ app.post("/api/chat", async (req, res) => {
     res.json({ message: response.text });
   } catch (error: any) {
     console.error("Chat error:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: "Gemini API Error",
+      message: error.message || "Internal Server Error",
+      details: error.stack
+    });
   }
 });
 
 app.post("/api/evaluate", async (req, res) => {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "Missing GEMINI_API_KEY environment variable." });
+    }
+
     const { history, documentContext, role, personality } = req.body;
 
     const prompt = `
@@ -104,7 +136,7 @@ app.post("/api/evaluate", async (req, res) => {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.0-flash",
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json",
@@ -114,7 +146,11 @@ app.post("/api/evaluate", async (req, res) => {
     res.json(JSON.parse(response.text || "{}"));
   } catch (error: any) {
     console.error("Evaluation error:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: "Gemini API Error (Evaluation)",
+      message: error.message || "Internal Server Error",
+      details: error.stack
+    });
   }
 });
 
