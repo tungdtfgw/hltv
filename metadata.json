@@ -1,0 +1,8 @@
+{
+  "name": "Luyện Tư Vấn Tuyển Sinh",
+  "description": "Ứng dụng luyện tập tư vấn tuyển sinh với Gemini API. Người dùng có thể tải tài liệu nền, chọn vai và tính cách người hỏi để thực hành và nhận đánh giá chi tiết.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
