@@ -73,9 +73,8 @@ app.post("/api/chat", async (req, res) => {
       }];
     }
 
-    // Attempting with gemini-2.0-flash or gemini-1.5-flash
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents,
       config: {
         systemInstruction,
@@ -136,7 +135,7 @@ app.post("/api/evaluate", async (req, res) => {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json",
